@@ -79,6 +79,18 @@ it.layer(layer)("PreviewManager", (it) => {
     }),
   );
 
+  it.effect("opens an explicitly headless server session", () =>
+    Effect.gen(function* () {
+      const threadId = freshThreadId();
+      const manager = yield* PreviewManager.PreviewManager;
+
+      const opened = yield* manager.open({ threadId, runtime: "server", headless: true });
+
+      expect(opened.runtime).toBe("server");
+      expect(opened.headless).toBe(true);
+    }),
+  );
+
   it.effect("reissues presentation requests without replaying them on navigation", () =>
     Effect.gen(function* () {
       const threadId = freshThreadId();

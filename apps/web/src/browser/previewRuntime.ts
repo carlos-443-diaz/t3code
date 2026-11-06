@@ -21,15 +21,22 @@ export function previewRuntimeFor(environmentId: EnvironmentId): PreviewRuntime 
   return "server";
 }
 
-export function alternatePreviewRuntime(
+export interface AlternatePreviewTarget {
+  readonly runtime: PreviewRuntime;
+  readonly headless?: true;
+}
+
+export function alternatePreviewTarget(
   environmentId: EnvironmentId,
   primaryEnvironmentId: EnvironmentId | null,
   serverBrowser: boolean,
-  snapshot: Pick<PreviewSessionSnapshot, "runtime"> | null | undefined,
-): PreviewRuntime | null {
+  snapshot: Pick<PreviewSessionSnapshot, "runtime" | "headless"> | null | undefined,
+): AlternatePreviewTarget | null {
   if (!snapshot || !serverBrowser || !isPreviewSupportedInRuntime()) return null;
-  if (environmentId === primaryEnvironmentId) return null;
-  return snapshot.runtime === "server" ? "desktop" : "server";
+  if (environmentId === primaryEnvironmentId) {
+    return snapshot.headless ? { runtime: "server" } : { runtime: "server", headless: true };
+  }
+  return { runtime: snapshot.runtime === "server" ? "desktop" : "server" };
 }
 
 export function isPreviewAvailableFor(environmentId: EnvironmentId): boolean {

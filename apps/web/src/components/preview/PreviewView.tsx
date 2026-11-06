@@ -83,7 +83,7 @@ import { revealInFileExplorerLabel } from "./fileExplorerLabel";
 import { shouldShowPreviewEmptyState } from "./previewEmptyStateLogic";
 import { Badge } from "~/components/ui/badge";
 import { BrowserSurfaceSlot } from "~/browser/BrowserSurfaceSlot";
-import { alternatePreviewRuntime, useRendersServerTabNatively } from "~/browser/previewRuntime";
+import { alternatePreviewTarget, useRendersServerTabNatively } from "~/browser/previewRuntime";
 import { ServerBrowserSurface, type ServerBrowserHandle } from "~/browser/ServerBrowserSurface";
 import { cn } from "~/lib/utils";
 import { useBrowserSurfaceStore } from "~/browser/browserSurfaceStore";
@@ -390,14 +390,20 @@ export function PreviewView({
     void localApi.shell.openExternal(url).catch(() => undefined);
   };
 
-  const moveTarget = alternatePreviewRuntime(
+  const moveTarget = alternatePreviewTarget(
     threadRef.environmentId,
     primaryEnvironmentId,
     serverBrowser,
     snapshot,
   );
   const moveLabel =
-    moveTarget === "server" ? `Open in ${environmentLabel}'s browser` : "Open on this computer";
+    moveTarget?.headless === true
+      ? `Open in ${environmentLabel}'s server browser`
+      : moveTarget?.runtime === "server"
+        ? threadRef.environmentId === primaryEnvironmentId
+          ? "Open in this computer's browser"
+          : `Open in ${environmentLabel}'s browser`
+        : "Open on this computer";
   const handleMoveTab = async () => {
     if (!moveTarget || !tabId || !snapshot) return;
     const result = await openPreviewSession({
@@ -406,14 +412,15 @@ export function PreviewView({
       ...(url
         ? {
             url:
-              moveTarget === "desktop"
+              moveTarget.runtime === "desktop"
                 ? resolveDiscoveredServerUrl(threadRef.environmentId, url)
                 : url,
           }
         : {}),
       viewport,
       ...(snapshot.profileId === undefined ? {} : { profileId: snapshot.profileId }),
-      runtime: moveTarget,
+      runtime: moveTarget.runtime,
+      ...(moveTarget.headless === true ? { headless: true } : {}),
     });
     if (result._tag === "Failure") {
       if (isAtomCommandInterrupted(result)) return;
@@ -1075,7 +1082,7 @@ export function PreviewView({
               code={navStatus.code}
               description={navStatus.description}
               onReload={handleRefresh}
-              {...(moveTarget === "server"
+              {...(moveTarget?.runtime === "server"
                 ? { move: { label: moveLabel, onMove: () => void handleMoveTab() } }
                 : {})}
             />

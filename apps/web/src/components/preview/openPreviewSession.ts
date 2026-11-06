@@ -25,6 +25,7 @@ interface OpenPreviewSessionInput<E> {
   viewport?: PreviewViewportSetting;
   profileId?: string;
   runtime?: PreviewRuntime;
+  headless?: boolean;
 }
 
 export async function openPreviewSession<E>(
@@ -46,6 +47,7 @@ export async function openPreviewSession<E>(
       viewport: input.viewport ?? defaults.viewport,
       profileId: input.profileId ?? defaults.profileId,
       ...(runtime === undefined || runtime === "desktop" ? {} : { runtime }),
+      ...(runtime === "server" && input.headless === true ? { headless: true } : {}),
     },
   });
   if (result._tag === "Failure") {

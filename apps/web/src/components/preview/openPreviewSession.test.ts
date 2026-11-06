@@ -58,6 +58,23 @@ afterEach(() => {
 });
 
 describe("openPreviewSession", () => {
+  it("passes an explicit headless server runtime to the environment", async () => {
+    const openPreview = vi.fn(async () => AsyncResult.success({ ...snapshot, headless: true }));
+
+    await openPreviewSession({
+      openPreview,
+      threadRef,
+      url: "https://t3.chat/",
+      runtime: "server",
+      headless: true,
+    });
+
+    expect(openPreview).toHaveBeenCalledWith({
+      environmentId: threadRef.environmentId,
+      input: expect.objectContaining({ runtime: "server", headless: true }),
+    });
+  });
+
   it.each(["session", "link"] as const)(
     "does not open a %s with unread settings and uses the saved profile on retry",
     async (entryPoint) => {
